@@ -80,6 +80,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if (r!=0){
             return Result.fail(r==1?"库存不足":"不能重复下单");
         }
+
         //有购买资格,把下单信息保存到阻塞队列当中
         //创建订单
         VoucherOrder voucherOrder = new VoucherOrder();
@@ -87,9 +88,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         voucherOrder.setId(orderId);
         voucherOrder.setUserId(userId);
         voucherOrder.setVoucherId(voucherId);
-
+        //放入阻塞队列
         orderTasks.add(voucherOrder);//生产者
-
         proxy = (IVoucherOrderService) AopContext.currentProxy();
 
         //返回订单id
