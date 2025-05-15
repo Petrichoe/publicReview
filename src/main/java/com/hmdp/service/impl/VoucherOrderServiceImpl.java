@@ -69,7 +69,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
      * @param voucherId
      * @return
      */
-    private IVoucherOrderService proxy;
+    //private IVoucherOrderService proxy;
     @Override
     public Result seckillVoucher(Long voucherId) {
         Long userId = UserHolder.getUser().getId();
@@ -99,7 +99,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
         //发送订单消息到RabbitMQ中
         String exchangeName="voucher.direct";
-        String routingKey = "voucher.queue";    // 与监听器中 @Queue 的 name 一致 (因为key未指定，默认用队列名)
+        String routingKey = "red";
         rabbitTemplate.convertAndSend(exchangeName,routingKey,voucherOrder);
         log.info("订单信息已发送到MQ: exchange='{}', routingKey='{}', order={}", exchangeName, routingKey, voucherOrder);
 
@@ -109,11 +109,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     //创建现称池
    // private static final ExecutorService SECKILL_ORDER_EXECTUOR = Executors.newSingleThreadExecutor();
-    @PostConstruct
-    private void init(){
-        //SECKILL_ORDER_EXECTUOR.submit(new VoucherOrderHandler());
-        proxy = (IVoucherOrderService) AopContext.currentProxy();// 只初始化代理，不启动线程池
-    }
+//    @PostConstruct
+//    private void init(){
+//        //SECKILL_ORDER_EXECTUOR.submit(new VoucherOrderHandler());
+//        proxy = (IVoucherOrderService) AopContext.currentProxy();// 只初始化代理，不启动线程池
+//    }
     //这个意思是不是启动了一个单线程的线程池，然后提交常驻任务（VoucherOrderHandler），
     // 然后这个任务中的  VoucherOrder voucherOrder = orderTasks.take();取到提交的任务时就开始一个一个处理
 

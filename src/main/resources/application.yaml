@@ -22,7 +22,7 @@ spring:
     host: 192.168.154.129
     port: 5673
     virtual-host: /hm-dianping
-    username: root
+    username: hm-dianping
     password: 123
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
@@ -32,3 +32,5 @@ mybatis-plus:
 logging:
   level:
     com.hmdp: debug
+#    org.springframework.amqp: TRACE  # Spring AMQP 组件的详细日志
+#    com.rabbitmq.client: DEBUG     # RabbitMQ Java 客户端库的日志 (也可以设为 TRACE)
