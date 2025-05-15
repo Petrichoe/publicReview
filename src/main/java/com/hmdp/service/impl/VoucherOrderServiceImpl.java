@@ -11,6 +11,7 @@ import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -50,6 +51,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedissonClient redissonClient;
 
+    @Resource
+    private RabbitTemplate rabbitTemplate;
+
     //初始化seckill.lua
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
     static {
@@ -58,7 +62,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         SECKILL_SCRIPT.setResultType(Long.class);
     }
     //阻塞队列
-    private BlockingQueue<VoucherOrder> orderTasks =new ArrayBlockingQueue<>(1024*1024);
+    //private BlockingQueue<VoucherOrder> orderTasks =new ArrayBlockingQueue<>(1024*1024);
 
     /**
      * 1.入口
@@ -80,6 +84,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if (r!=0){
             return Result.fail(r==1?"库存不足":"不能重复下单");
         }
+
         //有购买资格,把下单信息保存到阻塞队列当中
         //创建订单
         VoucherOrder voucherOrder = new VoucherOrder();
@@ -88,72 +93,84 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         voucherOrder.setUserId(userId);
         voucherOrder.setVoucherId(voucherId);
 
-        orderTasks.add(voucherOrder);//生产者
+//        //放入阻塞队列
+//        orderTasks.add(voucherOrder);//生产者
+//        proxy = (IVoucherOrderService) AopContext.currentProxy();
 
-        proxy = (IVoucherOrderService) AopContext.currentProxy();
+        //发送订单消息到RabbitMQ中
+        String exchangeName="voucher.direct";
+        String routingKey = "voucher.queue";    // 与监听器中 @Queue 的 name 一致 (因为key未指定，默认用队列名)
+        rabbitTemplate.convertAndSend(exchangeName,routingKey,voucherOrder);
+        log.info("订单信息已发送到MQ: exchange='{}', routingKey='{}', order={}", exchangeName, routingKey, voucherOrder);
 
         //返回订单id
         return  Result.ok(orderId);
     }
 
     //创建现称池
-    private static final ExecutorService SECKILL_ORDER_EXECTUOR = Executors.newSingleThreadExecutor();
+   // private static final ExecutorService SECKILL_ORDER_EXECTUOR = Executors.newSingleThreadExecutor();
     @PostConstruct
     private void init(){
-        SECKILL_ORDER_EXECTUOR.submit(new VoucherOrderHandler());
+        //SECKILL_ORDER_EXECTUOR.submit(new VoucherOrderHandler());
+        proxy = (IVoucherOrderService) AopContext.currentProxy();// 只初始化代理，不启动线程池
     }
     //这个意思是不是启动了一个单线程的线程池，然后提交常驻任务（VoucherOrderHandler），
     // 然后这个任务中的  VoucherOrder voucherOrder = orderTasks.take();取到提交的任务时就开始一个一个处理
+
+
     /**
-     * 2.实现异步下单
+     * 这部分通过RabbitMQ来调用了
      */
-    private class VoucherOrderHandler implements Runnable{//消费者
-        @Override
-        public void run() {
-            while (true){
-                try {
-                    //获取队列中的用户信息
-                    VoucherOrder voucherOrder = orderTasks.take();
-                    handleVoucherOrder(voucherOrder);
-                } catch (InterruptedException e) {
-                    log.error("处理订单异常",e);
-                }
-            }
-        }
-    }
+//    /**
+//     * 2.实现异步下单
+//     */
+//    private class VoucherOrderHandler implements Runnable{//消费者
+//        @Override
+//        public void run() {
+//            while (true){
+//                try {
+//                    //获取队列中的用户信息
+//                    VoucherOrder voucherOrder = orderTasks.take();
+//                    handleVoucherOrder(voucherOrder);
+//                } catch (InterruptedException e) {
+//                    log.error("处理订单异常",e);
+//                }
+//            }
+//        }
+//    }
+
+//    /**
+//     * 3.加锁保护
+//     * @param voucherOrder
+//     */
+//    private void handleVoucherOrder(VoucherOrder voucherOrder){
+//        Long userId = voucherOrder.getUserId();
+//        //创建锁对象
+//        //SimpleRedisLock lock = new SimpleRedisLock(stringRedisTemplate, "order:" + userid);
+//        RLock lock = redissonClient.getLock("lock:order:" + userId);
+//        //以防万一，所以加锁
+//        boolean isLock = lock.tryLock();
+//        if (!isLock) {
+//            log.error("不允许重复下单");
+//            return ;
+//        }
+//        //返回订单id
+//        try {
+//            //问题：Service类中在A方法中调用声明式事务B时，B的事务不会生效
+//            //Spring AOP 事务管理的原理是 代理对象 来管理事务：因此需要获取当前类的 Spring AOP 代理对象（如果用this直接调用就不行），否则调用方法的事务就不能生效
+//
+//            proxy.createVoucherOrder(voucherOrder);
+//        } catch (IllegalStateException e) {
+//            throw new RuntimeException(e);
+//        }finally {
+//            lock.unlock();
+//        }
+//
+//    }
 
     /**
-     * 3.加锁保护
-     * @param voucherOrder
-     */
-    private void handleVoucherOrder(VoucherOrder voucherOrder){
-        Long userId = voucherOrder.getUserId();
-        //创建锁对象
-        //SimpleRedisLock lock = new SimpleRedisLock(stringRedisTemplate, "order:" + userid);
-        RLock lock = redissonClient.getLock("lock:order:" + userId);
-        //以防万一，所以加锁
-        boolean isLock = lock.tryLock();
-        if (!isLock) {
-            log.error("不允许重复下单");
-            return ;
-        }
-        //返回订单id
-        try {
-            //问题：Service类中在A方法中调用声明式事务B时，B的事务不会生效
-            //Spring AOP 事务管理的原理是 代理对象 来管理事务：因此需要获取当前类的 Spring AOP 代理对象（如果用this直接调用就不行），否则调用方法的事务就不能生效
-
-            proxy.createVoucherOrder(voucherOrder);
-        } catch (IllegalStateException e) {
-            throw new RuntimeException(e);
-        }finally {
-            lock.unlock();
-        }
-
-    }
-
-    /**
-     * 4.实现数据库的那部分操作，加入阻塞队列中异步操作
-     *
+     * 4.实现数据库的那部分操作，//加入阻塞队列中异步操作
+     *这个方法是实际创建订单并操作数据库的地方，由MQ消费者调用（通过代理）
      * @param voucherOrder
      * @return
      */
