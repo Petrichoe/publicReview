@@ -26,3 +26,9 @@ redis.call('sadd',orderKey,userId)
 
 return 0
 
+--代码解释
+--查库存 (get stockKey)
+--判断是否重复下单 (sismember orderKey userId)
+--扣减库存 (incrby stockKey -1)
+--记录订单 (sadd orderKey userId)
+

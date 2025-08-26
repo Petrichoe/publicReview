@@ -33,7 +33,7 @@ public class SimpleRedisLock implements ILock {
         //获取线程标识
         String threadId =ID_PREFIX+ Thread.currentThread().getId();
         Boolean success=stringRedisTemplate.opsForValue().setIfAbsent(KEY_PREFIX+name,threadId+"",timeoutSec, TimeUnit.SECONDS);
-        return Boolean.TRUE.equals(success);//如果success为false则返回false，保证不会出现返回null的问题
+        return Boolean.TRUE.equals(success);//如果success为null则返回false，保证不会出现返回null的问题
     }
 
     /**
@@ -45,7 +45,6 @@ public class SimpleRedisLock implements ILock {
                 UNLOCK_SCRIPT,
                 Collections.singletonList(KEY_PREFIX+name),
                 ID_PREFIX +Thread.currentThread().getId());
-
     }
 
 

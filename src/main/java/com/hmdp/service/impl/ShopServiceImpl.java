@@ -61,6 +61,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             return Result.fail("店铺不存在");
         }
         return Result.ok(shop);
+
     }
 
     /**
@@ -77,6 +78,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             Shop shop = JSONUtil.toBean(shopJson, Shop.class);
             return shop;
         }
+
         //判断命中的是否为空值->判断 "" 这个的，如果是null表示还没从数据库查询，如果不是null那只能是空值:""
         if (shopJson!=null){
             return null;

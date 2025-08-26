@@ -25,23 +25,12 @@ public class seckillVoucherListener {
     private final IVoucherOrderService voucherOrderService;
     private final RedissonClient redissonClient; // 注入 RedissonClient
 
-    // 用于事务的代理对象
-   // private IVoucherOrderService proxy;
-
-//    @PostConstruct
-//    private void initProxy() {
-//        // 从 AopContext 获取当前对象的代理，确保事务生效
-//        // 需要在主启动类或配置类上添加 @EnableAspectJAutoProxy(exposeProxy = true)
-//        proxy = (IVoucherOrderService) AopContext.currentProxy();
-//    }
-
     @RabbitListener(bindings =@QueueBinding(
             value = @Queue(name = "voucher.queue",durable = "true"),
             exchange = @Exchange(name = "voucher.direct"),
             key = "red" // <--- 明确指定绑定键
     ))
     public void listenseckillvoucher(VoucherOrder voucherOrder){
-        //TODO 为什么这里不用springaop那个配置了
         if (voucherOrder==null){
             log.error("从MQ收到空的秒杀凭证订单消息");
             return;
@@ -94,13 +83,4 @@ public class seckillVoucherListener {
 
     }
 
-    /**
-     * 封装调用代理对象的逻辑，确保事务生效
-     * 这个方法本身不需要 @Transactional，因为它调用的是代理对象的 @Transactional 方法
-     */
-//    private void processOrderWithProxy(VoucherOrder voucherOrder) {
-//        // 假设 createVoucherOrder 是 IVoucherOrderService 中的 @Transactional 方法
-//        // proxy 是 IVoucherOrderService 的代理对象
-//        proxy.createVoucherOrder(voucherOrder);
-//    }
 }
