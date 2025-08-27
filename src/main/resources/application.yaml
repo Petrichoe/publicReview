@@ -9,7 +9,7 @@ spring:
     username: root
     password: abc123
   redis:
-    host: 192.168.154.129
+    host: 192.168.101.129
     port: 6379
     password: abc123
     lettuce:
@@ -19,7 +19,7 @@ spring:
         min-idle: 1
         time-between-eviction-runs: 10s
   rabbitmq:
-    host: 192.168.154.129
+    host: 192.168.101.129
     port: 5673
     virtual-host: /hm-dianping
     username: hm-dianping
