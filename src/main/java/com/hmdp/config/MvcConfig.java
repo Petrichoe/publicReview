@@ -29,7 +29,14 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/upload/**",
                         "/blog/hot",
                         "/user/code",
-                        "/user/login"
+                        "/user/login",
+                        "/ai/**",
+                        // ----- 新增Knife4j文档相关的放行路径 -----
+                        "/doc.html",
+                        "/webjars/**",
+                        "/swagger-resources",
+                        "/v3/api-docs/**"
+                        // ----- 新增结束 -----
                 ).order(1);
         registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate))
                 .addPathPatterns("/**").order(0);//配置order表示运行顺序，越小优先级越高

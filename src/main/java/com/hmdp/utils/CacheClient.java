@@ -57,7 +57,7 @@ public class CacheClient {
             return null;
         }
         //不存在，根据id查询数据库
-        R r = dbFallback.apply(id);
+        R r = dbFallback.apply(id);//有时候查shop有时查user所以不能固定
         //如果id查询的店铺不存在
         if(r==null){
             //将空值存入redis中，避免缓存穿透问题

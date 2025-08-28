@@ -32,6 +32,9 @@ spring:
           max-idle: 10
           min-idle: 1
           # time-between-eviction-runs 属性已被移除，可以直接删除
+    mongodb:
+      uri: mongodb://localhost:27017/chat_memory_db_dp
+
 
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
@@ -40,3 +43,20 @@ logging:
     com.hmdp: debug
 #    org.springframework.amqp: TRACE  # Spring AMQP 组件的详细日志
 #    com.rabbitmq.client: DEBUG     # RabbitMQ Java 客户端库的日志 (也可以设为 TRACE)
+
+
+# Langchain4j Configuration
+langchain4j:
+  open-ai:
+    # 对话模型
+    chat-model:
+      base-url: https://api.deepseek.com
+      api-key: ${DEEPSEEK_API_KEY} # 请将你的 API Key 填在这里或配置在环境变量中
+      model-name: deepseek-chat
+      log-requests: true
+      log-responses: true
+#    # 流式对话模型
+#    streaming-chat-model:
+#      base-url: https://api.deepseek.com
+#      api-key: ${DEEPSEEK_API_KEY} # 请将你的 API Key 填在这里或配置在环境变量中
+#      model-name: deepseek-chat
