@@ -8,16 +8,6 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC
     username: root
     password: abc123
-  redis:
-    host: 192.168.101.129
-    port: 6379
-    password: abc123
-    lettuce:
-      pool:
-        max-active: 10
-        max-idle: 10
-        min-idle: 1
-        time-between-eviction-runs: 10s
   rabbitmq:
     host: 192.168.101.129
     port: 5673
@@ -26,6 +16,23 @@ spring:
     password: 123
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
+  redisson:
+    file: classpath:redisson.yaml # 或者直接在下面配置
+    config: |
+      singleServerConfig:
+        address: "redis://192.168.101.129:6379"
+        password: "abc123"
+    data:
+      redis:
+        host: 192.168.101.129
+        port: 6379
+        password: abc123
+        lettuce:
+          pool:
+            max-active: 10
+            max-idle: 10
+            min-idle: 1
+            # time-between-eviction-runs 属性已被移除，可以直接删除
 
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包

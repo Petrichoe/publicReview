@@ -13,11 +13,12 @@ import com.hmdp.service.IUserService;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
+import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+
 import java.util.List;
 import java.util.Set;
 

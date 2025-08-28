@@ -10,11 +10,12 @@ import com.hmdp.entity.UserInfo;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.UserHolder;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
+
+import jakarta.servlet.http.HttpSession;
 
 /**
  * <p>

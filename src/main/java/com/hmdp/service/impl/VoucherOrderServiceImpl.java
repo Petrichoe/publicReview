@@ -8,6 +8,7 @@ import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdWorker;
 import com.hmdp.utils.UserHolder;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -19,8 +20,8 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+
+
 import java.util.Collections;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -179,7 +180,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         //一人一票，判断是否重复购买
         Long userid = voucherOrder.getUserId();
 
-        Integer count = query()
+        Long count = query()
                 .eq("user_id", userid)
                 .eq("voucher_id", voucherOrder.getVoucherId())
                 .count();

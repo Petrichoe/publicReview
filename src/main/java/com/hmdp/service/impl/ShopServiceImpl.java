@@ -12,11 +12,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.RedisData;
+import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+
 import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
