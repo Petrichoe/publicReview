@@ -6,7 +6,7 @@ import com.hmdp.dto.UserDTO;
  * 通过ThreadLocal实现线程隔离，确保每个线程的用户信息互不干扰。
  */
 public class UserHolder {
-    private static final ThreadLocal<UserDTO> tl = new ThreadLocal<>();
+    private static final ThreadLocal<UserDTO> tl = new ThreadLocal<>();//通过ThreadLocal实现线程隔离
 
     public static void saveUser(UserDTO user){
         tl.set(user);

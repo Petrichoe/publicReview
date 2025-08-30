@@ -2,6 +2,10 @@ package com.hmdp.controller;
 
 import com.hmdp.assistant.DianpingAgent;
 import com.hmdp.dto.ChatFormDTO;
+import com.hmdp.dto.Result;
+import com.hmdp.dto.UserDTO;
+import com.hmdp.utils.UserHolder;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,8 +23,18 @@ public class AiController {
     private DianpingAgent dianpingAgent;
 
     @PostMapping(value = "/chat")
-    public String chat(@RequestBody ChatFormDTO chatForm) {
-         return dianpingAgent.chat(chatForm.getMemoryId(), chatForm.getMessage());
+    public Result chat(@RequestBody ChatFormDTO chatForm) {
+
+        //调试期间暂时注释
+        /*UserDTO user = UserHolder.getUser();
+        if(user==null){
+            return Result.fail("请先登录！");
+        }
+        Long memoryId =user.getId();*/
+
+        Long memoryId= 666L;
+        return Result.ok(dianpingAgent.chat(memoryId, chatForm.getMessage()));
+
 
         //流式处理
         /*// 从 Agent 获取原始的“词块”流

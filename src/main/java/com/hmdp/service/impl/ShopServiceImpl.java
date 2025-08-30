@@ -4,21 +4,27 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
+import com.hmdp.entity.ShopType;
 import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.service.IShopTypeService;
 import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.RedisData;
+import dev.langchain4j.service.spring.AiService;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +45,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     @Resource
     private CacheClient cacheClient;
+
+    @Autowired
+    private IShopTypeService shopTypeService;
 
     /**
      * 根据id查询商铺信息
@@ -244,4 +253,46 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         stringRedisTemplate.delete(RedisConstants.CACHE_SHOP_KEY+id);
         return Result.ok();
     }
+
+    @Override
+    public Result recommendShops(String category, String sortBy, int limit) {
+        // 1. 根据类别名称查询类别ID
+        ShopType shopType = shopTypeService.query().eq("name", category).one();
+        if (shopType == null) {
+            return Result.fail("不支持的商铺类别：" + category);
+        }
+
+        // 2. 构建查询条件
+        QueryWrapper<Shop> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("type_id", shopType.getId());
+
+        // 3. 根据排序方式进行排序
+        switch (sortBy) {
+            case "评分":
+                queryWrapper.orderByDesc("score");
+                break;
+            case "价格":
+                queryWrapper.orderByAsc("avg_price");
+                break;
+            case "销量":
+                queryWrapper.orderByDesc("sold");
+                break;
+            default:
+                // 默认按评分排序
+                queryWrapper.orderByDesc("score");
+                break;
+        }
+
+        queryWrapper.last("LIMIT " + limit);
+
+        List<Shop> shops = list(queryWrapper);
+
+        if (shops == null || shops.isEmpty()) {
+            return Result.fail("没有找到符合条件的商铺");
+        }
+
+        return Result.ok(shops);
+    }
+
+
 }
