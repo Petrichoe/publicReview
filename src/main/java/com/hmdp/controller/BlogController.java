@@ -9,11 +9,13 @@ import com.hmdp.entity.Follow;
 import com.hmdp.entity.User;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IFollowService;
+import com.hmdp.service.IKnowledgeBaseService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.web.bind.annotation.*;
@@ -43,6 +45,9 @@ public class BlogController {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private IKnowledgeBaseService knowledgeBaseService;
+
 
 
     /**
@@ -61,6 +66,11 @@ public class BlogController {
         if (!isSuccess){
             return Result.fail("新增笔记失败！");
         }
+
+        // 3. 异步将新博客加载到向量知识库中
+        // 这个调用会立即返回，不会等待向量化和存储完成
+        knowledgeBaseService.ingestSingleBlog(blog);
+
         //查询笔记作者的所有粉丝
         List<Follow> follows = followService.query().eq("follow_user_id", blog.getUserId()).list();
         //推送笔记id给所有的粉丝

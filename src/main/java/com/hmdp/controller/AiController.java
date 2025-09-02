@@ -4,6 +4,7 @@ import com.hmdp.assistant.DianpingAgent;
 import com.hmdp.dto.ChatFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
+import com.hmdp.service.UnifiedAiService;
 import com.hmdp.utils.UserHolder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,18 +23,21 @@ public class AiController {
     @Autowired
     private DianpingAgent dianpingAgent;
 
+    @Autowired
+    private UnifiedAiService unifiedAiService;
+
     @PostMapping(value = "/chat")
     public Result chat(@RequestBody ChatFormDTO chatForm) {
 
         //调试期间暂时注释
-        /*UserDTO user = UserHolder.getUser();
+        UserDTO user = UserHolder.getUser();
         if(user==null){
             return Result.fail("请先登录！");
         }
-        Long memoryId =user.getId();*/
+        Long memoryId =user.getId();
 
-        Long memoryId= 666L;
-        return Result.ok(dianpingAgent.chat(memoryId, chatForm.getMessage()));
+        //Long memoryId= 666L;
+        return Result.ok(unifiedAiService.chat(memoryId, chatForm.getMessage()));
 
 
         //流式处理
