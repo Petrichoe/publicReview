@@ -30,13 +30,13 @@ public class AiController {
     public Result chat(@RequestBody ChatFormDTO chatForm) {
 
         //调试期间暂时注释
-        /*UserDTO user = UserHolder.getUser();
+        UserDTO user = UserHolder.getUser();
         if(user==null){
             return Result.fail("请先登录！");
         }
-        Long memoryId =user.getId();*/
+        Long memoryId =user.getId();
 
-        Long memoryId= 666L;
+        //Long memoryId= 666L;
         return Result.ok(unifiedAiService.chat(memoryId, chatForm.getMessage()));
 
 

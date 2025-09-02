@@ -20,3 +20,4 @@ public interface DianpingAgent {
     @SystemMessage(fromResource = "dianping-prompt-template.txt")
     String chat(@MemoryId Long memoryId, @UserMessage String userMessage);
 }
+//TODO 升级库依赖

@@ -13,6 +13,8 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -23,6 +25,7 @@ import java.util.List;
 /**
  * 当服务启动时，自动加载所有博客文章到知识库中
  */
+@Slf4j
 @Service
 public class KnowledgeBaseServiceImpl implements IKnowledgeBaseService {
 
@@ -35,83 +38,57 @@ public class KnowledgeBaseServiceImpl implements IKnowledgeBaseService {
     @Resource
     private EmbeddingStore<TextSegment> embeddingStore;
 
-    //private EmbeddingStoreIngestor ingestor;
+    private EmbeddingStoreIngestor ingestor;
 
     private DocumentSplitter documentSplitter;
 
-    // 使用 @PostConstruct 初始化 ingestor，避免重复创建
-    /*@PostConstruct
-    private void init() {
-        this.ingestor = EmbeddingStoreIngestor.builder()
-                .documentSplitter(DocumentSplitters.recursive(300, 0))//设置文本分割器
-                .embeddingModel(embeddingModel) //将文本转为数学向量
-                .embeddingStore(embeddingStore) //将向量保存到向量数据库中
-                .build();
-        
-        // 系统启动时，执行全量加载
-        ingestAllBlogs();
-    }*/
+
+
+    // --- 2. 使用 @PostConstruct 初始化 Ingestor ---
     @PostConstruct
     private void init() {
-        // 只初始化分割器
-        this.documentSplitter = DocumentSplitters.recursive(300, 0);
+        this.ingestor = EmbeddingStoreIngestor.builder()
+                .documentSplitter(DocumentSplitters.recursive(300, 0))
+                .embeddingModel(embeddingModel)
+                .embeddingStore(embeddingStore)
+                .build();
 
-        // 系统启动时，执行全量加载
-        ingestAllBlogs();
+        // 系统启动时，执行全量加载,手动调用
+        //ingestAllBlogs();
+
     }
 
     @Override
     public void ingestAllBlogs() {
         List<Blog> blogs = blogService.list();
         for (Blog blog : blogs) {
+            // 为避免阻塞，我们让它也异步执行
             ingestSingleBlog(blog);
         }
         System.out.println("知识库全量加载完成，共处理 " + blogs.size() + " 篇博客。");
     }
 
-/*    @Override
-    public void ingestSingleBlog(Blog blog) {
-        Document document = Document.from(blog.getTitle() + "\n" + blog.getContent());
-        document.metadata().put("blog_id", blog.getId());
-        document.metadata().put("user_id", blog.getUserId());
 
-        // 1. 手动分割文档
-        List<TextSegment> segments = documentSplitter.split(document);
-
-        // 2. 为每个 segment 生成唯一的、可重复的ID，并进行向量化和存储
-        for (TextSegment segment : segments) {
-            // 使用内容生成哈希值作为ID
-            String id = generateIdFrom(segment.text());
-            segment.metadata().put("text", segment.text()); // 可选：将ID也存入元数据
-
-            Embedding embedding = embeddingModel.embed(segment).content();
-            embeddingStore.add(id, embedding);
-        }
-
-        System.out.println("博客 [ID: " + blog.getId() + "] 已加载到知识库。");
-    }*/
-
+    /**
+     * 使用 @Async 注解，使其成为一个异步方法。
+     * Spring 会在独立的线程中执行它，不会阻塞调用者（例如Controller）。
+     */
+    @Async("taskExecutor") // 指定使用我们稍后定义的线程池
     @Override
     public void ingestSingleBlog(Blog blog) {
-        Document document = Document.from(blog.getTitle() + "\n" + blog.getContent());
-        document.metadata().put("blog_id", String.valueOf(blog.getId()));
-        document.metadata().put("user_id", String.valueOf(blog.getUserId()));
-        // 1. 手动分割文档
-        List<TextSegment> segments = documentSplitter.split(document);
-        // 2. 为每个 segment 生成唯一的、可重复的ID，并进行向量化和存储
-        for (TextSegment segment : segments) {
-            segment.metadata().put("text", segment.text());
+        try {
+            log.info("Starting async ingestion for blog ID: {}", blog.getId());
+            Document document = Document.from(blog.getTitle() + "\n" + blog.getContent());
+            document.metadata().put("blog_id", String.valueOf(blog.getId()));
+            document.metadata().put("user_id", String.valueOf(blog.getUserId()));
+            document.metadata().put("text", document.text());
 
-            // 1. 生成 Embedding，这个 Embedding 对象内部会携带 segment 的元数据
-            Embedding embedding = embeddingModel.embed(segment).content();
+            ingestor.ingest(document);
 
-            // 2. 生成唯一的 ID
-            String id = generateIdFrom(segment.text());
-
-            // 3. 使用正确的、IDE提示的 add 方法！
-            embeddingStore.add(id, embedding);
+            log.info("Successfully ingested blog ID: {}", blog.getId());
+        } catch (Exception e) {
+            log.error("Error during async ingestion for blog ID: {}", blog.getId(), e);
         }
-        System.out.println("博客 [ID: " + blog.getId() + "] 已加载到知识库。");
     }
 
     // 新增一个私有方法，用于根据内容生成SHA-266哈希值作为ID
