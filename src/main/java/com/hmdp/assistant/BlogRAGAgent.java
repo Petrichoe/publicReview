@@ -11,7 +11,6 @@ import static dev.langchain4j.service.spring.AiServiceWiringMode.EXPLICIT;
 @AiService(
         // 核心改动：在这里指定ContentRetriever的Bean名称
         contentRetriever = "contentRetrieverPincone",
-        // 如果需要对话记忆，也可以加上
         chatMemoryProvider = "chatMemoryProviderDianping",
         wiringMode = EXPLICIT,
         chatModel = "openAiChatModel"

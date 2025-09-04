@@ -29,6 +29,7 @@ public class AiController {
     @PostMapping(value = "/chat")
     public Result chat(@RequestBody ChatFormDTO chatForm) {
 
+
         //调试期间暂时注释
         UserDTO user = UserHolder.getUser();
         if(user==null){

@@ -20,8 +20,10 @@ if (redis.call('sismember',orderKey,userId)==1) then
     return 2
 end
 
+--扣减库存
 redis.call('incrby',stockKey,-1)
 
+--记录订单
 redis.call('sadd',orderKey,userId)
 
 return 0
