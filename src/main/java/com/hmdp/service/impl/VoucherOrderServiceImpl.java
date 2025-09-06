@@ -1,5 +1,6 @@
 package com.hmdp.service.impl;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.mapper.VoucherOrderMapper;
@@ -176,6 +177,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
      * @return
      */
     @Transactional
+    @DS("master") // 明确指定走主库，因为这是写操作，并且有事务
     public Result createVoucherOrder(VoucherOrder voucherOrder){
         //一人一票，判断是否重复购买
         Long userid = voucherOrder.getUserId();

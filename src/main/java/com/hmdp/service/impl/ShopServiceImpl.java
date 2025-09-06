@@ -4,6 +4,7 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
@@ -54,6 +55,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
      * @param id 商铺id
      * @return 商铺详情数据
      */
+    @DS("slave")//// 在方法上加上这个注解，告诉程序这个方法的所有数据库查询都走从库！
     @Override
     public Result queryById(Long id) {
         //解决缓存穿透
